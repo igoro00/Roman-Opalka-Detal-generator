@@ -12,38 +12,44 @@ import textwrap
 from alive_progress import alive_bar
 import time
 
-
-def IntelliDraw(drawer,text,font,containerWidth):
+def textWidth(string, cacheTable):
+	output = 0
+	for char in string:
+		output += cacheTable[char]
+	return output
+def IntelliDraw(text,containerWidth, cacheTable):
     #todo: add one char at a time to line string and check if textsize fits containerWidth
     #if it overflows take that char back, break the innerloop and put it in the next line string
     #and again and again
     #until input it empty
     #then return all lines
-    lines = [] # prepare a return argument
+    lines = []
     finished = False
     line = 0
-    while not finished:
-        newline = ""
-        innerFinished = False
-        while not innerFinished:
-            print('thistext: '+str(newline))
-            if drawer.textsize(newline,font)[0] < containerWidth:
-                newline.insert(0,thistext.pop(-1))
+    with alive_bar(len(text)) as bar:
+        while not finished:
+            newline = ""
+            innerFinished = False
+            while not innerFinished:
+                if (textWidth(newline+text[:1], cacheTable)<= (containerWidth+10)) and len(text)>=1:
+                    newline+=text[:1]
+                    text = text[1:]
+                    bar(text="1x speed", incr=1)
+                else:
+                    innerFinished = True
+            if len(newline) > 0:
+                lines.append(newline)
+                line = line + 1
             else:
-                innerFinished = True
-        if len(newline) > 0:
-            lines.append(newline)
-            line = line + 1
-        else:
-            finished = True
-    tmp = []        
-    for i in lines:
-        tmp.append( ' '.join(i) )
-    lines = tmp
-    (width,height) = drawer.textsize(lines[0],font)            
-    return (lines,width,height)
+                finished = True
+        return(lines)
 
-
+def createCacheTable(drawer, font, charsToCache):
+	cacheTable = dict()
+	for char in charsToCache:
+		cacheTable[char]=drawer.textsize(char, font)[0]
+	return cacheTable
+		
 height = 22608
 width = 15652
 
@@ -55,29 +61,27 @@ print("\nCreated string")
 
 #creating B/W image
 img = Image.new('L', (width, height), color=0)
-fnt = ImageFont.truetype('/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf', 69) #xd
+fnt = ImageFont.truetype('FatBoyVeryRoundItalic.ttf', 39)
 d = ImageDraw.Draw(img)
 print("Created image")
 
-#wrapped = [string[:491]]
-#string = string[491:]
-#wrapped.extend(textwrap.wrap(string, width=490))
-wrapped = IntelliDraw(d, string, fnt, width)
-print("Wrapped string")
+cacheTable=createCacheTable(d, fnt, set(string))
+print("Created cache table")
 
+print("Wrapping text...")
+wrapped = IntelliDraw(string, width, cacheTable)
 
-print("\nGenerating lines..")
-
+print("Printing lines...")
 h = 0
 with alive_bar(len(wrapped), force_tty=True) as bar:
     for i in wrapped:
-        d.text((0, h), i, font=fnt, fill=255)
-        h += 66
+        d.text((5, h), i, font=fnt, fill=255)
+        h += 49
         bar()
 
-print("\nSaving...")
+print("Saving...")
 img.save('test.png')
-print("Saved\n")
+print("Saved")
 
 
 
