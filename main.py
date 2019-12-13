@@ -7,88 +7,20 @@
 #and to keep proportions as similar as possible width = 15652px
 #that means 15652x22608 @ 11.5940px/mm and 135.001x194.997cm in psychical form
 
-from PIL import Image, ImageDraw, ImageFont
-import textwrap
-from alive_progress import alive_bar
-import time
+import utils
 
-def textWidth(string, cacheTable):
-	output = 0
-	for char in string:
-		output += cacheTable[char]
-	return output
-def IntelliDraw(text,containerWidth, cacheTable, drawer, font):
-    #add one char at a time to line string and check if textsize fits containerWidth
-    #if it overflows take that char back, break the innerloop and put it in the next line string
-    #and again and again
-    #until input it empty
-    #then return all lines
-    lines = []
-    finished = False
-    line = 0
-    with alive_bar(len(text)) as bar:
-        while not finished:
-            newline = ""
-            innerFinished = False
-            while not innerFinished:
-                if (textWidth(newline+text[:1], cacheTable)<= containerWidth) and len(text)>=1:
-                    newline+=text[:1]
-                    text = text[1:]
-                    bar(incr=1)
-                elif (drawer.textsize(newline+text[:1], font)[0] <= containerWidth) and len(text)>=1:
-                    #if it reaches the end of the line fast way, then we need
-                    #to check for missing ending with trusted and slow way
-                    newline+=text[:1]
-                    text = text[1:]
-                    bar(text="non-dict", incr=1)
-                else:
-                    innerFinished = True
-            if len(newline) > 0:
-                lines.append(newline)
-                line = line + 1
-            else:
-                finished = True
-        return(lines)
-
-def createCacheTable(drawer, font, charsToCache):
-    cacheTable = dict()
-    for char in charsToCache:
-        cacheTable[char]=drawer.textsize(char, font)[0]
-    return cacheTable
-		
 height = 22608
 width = 15652
+maxChars = 200898
+lastNum = 1
+filename =""
 
-string = ""
-for i in range(1, 35335):
-    string += str(i)
-    string += " "
-print("\nCreated string")
-
-#creating B/W image
-img = Image.new('L', (width, height), color=0)
-fnt = ImageFont.truetype('FatBoyVeryRoundItalic.ttf', 41)
-#fnt = ImageFont.truetype('arial.ttf', 39)
-d = ImageDraw.Draw(img)
-print("Created image")
-
-cacheTable=createCacheTable(d, fnt, set(string))
-print("Created cache table")
-
-print("Wrapping text...")
-wrapped = IntelliDraw(string, width, cacheTable, d, fnt)
-
-print("Printing lines...")
-h = 0
-with alive_bar(len(wrapped), force_tty=True) as bar:
-    for i in wrapped:
-        d.text((5, h), i, font=fnt, fill=255)
-        h += d.textsize(i, fnt)[1]+1
-        bar()
-
-print("Saving...")
-img.save('test.png')
-print("Saved")
-
-
+for xd in range(5):
+    img, fnt, d = utils.initImg(width, height)
+    filename = str(lastNum) + "-"
+    string, lastNum = utils.string(maxChars, lastNum)
+    filename +=str(lastNum)
+    cacheTable=utils.cacheTable(d, fnt, set(string))
+    utils.printText(utils.wrap(string, width, cacheTable, d, fnt), d, fnt)
+    utils.save(img, filename+".png")
 
