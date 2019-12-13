@@ -17,8 +17,8 @@ def textWidth(string, cacheTable):
 	for char in string:
 		output += cacheTable[char]
 	return output
-def IntelliDraw(text,containerWidth, cacheTable):
-    #todo: add one char at a time to line string and check if textsize fits containerWidth
+def IntelliDraw(text,containerWidth, cacheTable, drawer, font):
+    #add one char at a time to line string and check if textsize fits containerWidth
     #if it overflows take that char back, break the innerloop and put it in the next line string
     #and again and again
     #until input it empty
@@ -31,10 +31,16 @@ def IntelliDraw(text,containerWidth, cacheTable):
             newline = ""
             innerFinished = False
             while not innerFinished:
-                if (textWidth(newline+text[:1], cacheTable)<= (containerWidth+10)) and len(text)>=1:
+                if (textWidth(newline+text[:1], cacheTable)<= containerWidth) and len(text)>=1:
                     newline+=text[:1]
                     text = text[1:]
-                    bar(text="1x speed", incr=1)
+                    bar(incr=1)
+                elif (drawer.textsize(newline+text[:1], font)[0] <= containerWidth) and len(text)>=1:
+                    #if it reaches the end of the line fast way, then we need
+                    #to check for missing ending with trusted and slow way
+                    newline+=text[:1]
+                    text = text[1:]
+                    bar(text="non-dict", incr=1)
                 else:
                     innerFinished = True
             if len(newline) > 0:
@@ -45,23 +51,24 @@ def IntelliDraw(text,containerWidth, cacheTable):
         return(lines)
 
 def createCacheTable(drawer, font, charsToCache):
-	cacheTable = dict()
-	for char in charsToCache:
-		cacheTable[char]=drawer.textsize(char, font)[0]
-	return cacheTable
+    cacheTable = dict()
+    for char in charsToCache:
+        cacheTable[char]=drawer.textsize(char, font)[0]
+    return cacheTable
 		
 height = 22608
 width = 15652
 
 string = ""
-for i in range(35327):
-    string += str(i+1)
+for i in range(1, 35335):
+    string += str(i)
     string += " "
 print("\nCreated string")
 
 #creating B/W image
 img = Image.new('L', (width, height), color=0)
-fnt = ImageFont.truetype('FatBoyVeryRoundItalic.ttf', 39)
+fnt = ImageFont.truetype('FatBoyVeryRoundItalic.ttf', 41)
+#fnt = ImageFont.truetype('arial.ttf', 39)
 d = ImageDraw.Draw(img)
 print("Created image")
 
@@ -69,14 +76,14 @@ cacheTable=createCacheTable(d, fnt, set(string))
 print("Created cache table")
 
 print("Wrapping text...")
-wrapped = IntelliDraw(string, width, cacheTable)
+wrapped = IntelliDraw(string, width, cacheTable, d, fnt)
 
 print("Printing lines...")
 h = 0
 with alive_bar(len(wrapped), force_tty=True) as bar:
     for i in wrapped:
         d.text((5, h), i, font=fnt, fill=255)
-        h += 49
+        h += d.textsize(i, fnt)[1]+1
         bar()
 
 print("Saving...")
