@@ -1,2 +1,2 @@
 alive-progress
-PIL
+Pillow
