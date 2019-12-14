@@ -1,3 +1,2 @@
-test.png
-test.png
-.vscode/launch.json
+.vscode/
+__pycache__/
