@@ -11,16 +11,13 @@ import utils
 
 height = 22608
 width = 15652
-maxChars = 200898
 lastNum = 1
-filename =""
+filename ="1"
 
-for xd in range(5):
-    img, fnt, d = utils.initImg(width, height)
-    filename = str(lastNum) + "-"
-    string, lastNum = utils.string(maxChars, lastNum)
-    filename +=str(lastNum)
-    cacheTable=utils.cacheTable(d, fnt, set(string))
-    utils.printText(utils.wrap(string, width, cacheTable, d, fnt), d, fnt)
-    utils.save(img, filename+".png")
+
+img, fnt, d = utils.initImg(width, height)
+cacheTable=utils.cacheTable(d, fnt, " 1234567890\n")
+maxLines = utils.getMaxLines(d, fnt, height)
+utils.printText(utils.wrap(width, maxLines, cacheTable, d, fnt, lastNum), d, fnt)
+utils.save(img, filename+".png")
 

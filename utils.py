@@ -8,40 +8,47 @@ def initImg(width, height, font='FatBoyVeryRoundItalic.ttf', size = 41):
     print("Created image")
     return img, fnt, d
 
+def lastLine(string):
+    i = string.rfind("\n") + 1
+    return string[i:]
+
 def textWidth(string, cacheTable):
 	output = 0
 	for char in string:
-		output += cacheTable[char]
+            output += cacheTable[char]
 	return output
 
-def wrap(text,containerWidth, cacheTable, drawer, font):
+def wrap(width, maxLines, cacheTable, drawer, font, count):
     print("Creating text...")
-    lines = []
+    string = ""
+    newNum = ""
+    lines = 0
     finished = False
-    line = 0
-    with alive_bar(len(text)) as bar:
-        while not finished:
-            newline = ""
+    with alive_bar() as bar:
+        while not finished: 
             innerFinished = False
             while not innerFinished:
-                if (textWidth(newline+text[:1], cacheTable)<= containerWidth) and len(text)>=1:
-                    newline+=text[:1]
-                    text = text[1:]
-                    bar(incr=1)
-                elif (drawer.textsize(newline+text[:1], font)[0] <= containerWidth) and len(text)>=1:
-                    #if it reaches the end of the line fast way, then we need
-                    #to check for missing ending with trusted and slow way
-                    newline+=text[:1]
-                    text = text[1:]
-                    bar(text="non-dict", incr=1)
+                if len(newNum)>0:  
+                    if textWidth(lastLine(string)+newNum[:1], cacheTable)<= width:
+                        string+=newNum[:1]
+                        newNum = newNum[1:]
+                        bar(text = "dict", incr=1)
+                    elif drawer.textsize(lastLine(string)+newNum[:1], font)[0] <= width:
+                        #if it reaches the end of the line fast way, then we need
+                        #to check for missing ending with trusted and slow way
+                        string+=newNum[:1]
+                        newNum = newNum[1:]
+                        bar(text="non-dict", incr=1)
+                    else:
+                        string += "\n"
+                        lines += 1
+                        innerFinished = True
                 else:
-                    innerFinished = True
-            if len(newline) > 0:
-                lines.append(newline)
-                line = line + 1
-            else:
+                    newNum += str(count) + " "
+                    count += 1
+            if lines >= maxLines:
                 finished = True
-        return(lines)
+        return(string)
 
 def cacheTable(drawer, font, charsToCache):
     cacheTable = dict()
@@ -58,14 +65,15 @@ def string(maxChars, start):
     print("Created string\n\n\n")
     return string, start
 
-def printText(wrapped, d, fnt):
-    print("Printing lines...")
-    h = 0
-    with alive_bar(len(wrapped), force_tty=True) as bar:
-        for i in wrapped:
-            d.text((5, h), i, font=fnt, fill=255)
-            h += d.textsize(i, fnt)[1]+1
-            bar()
+def getMaxLines(drawer, font, height):
+    i = 0
+    while drawer.textsize("0\n"*i, font)[1]<height:
+        i += 1
+    print("Calculated max. number of lines")
+    return i
+def printText(string, d, fnt):
+    d.text((5, 0), string, font=fnt, fill=255)
+    print("Printed text...")
 
 def save(img, filename):
     print("Saving...")
