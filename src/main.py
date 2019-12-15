@@ -8,7 +8,7 @@
 #and to keep proportions as similar as possible width = 15652px
 #that means 15652x22608 @ 11.5940px/mm and 135.001x194.997cm in psychical form
 
-import utils
+import generator as gen
 import paint
 from time import time
 from os import mkdir
@@ -38,24 +38,24 @@ while lastNum < targetNum:
     print("\nPICTURE #%d"%imageIndex)
 
     #init picture
-    img, fnt, d = utils.initImg(width, height, bg)
-    cacheTable=utils.cacheTable(d, fnt, " 1234567890\n")
-    maxLines = utils.getMaxLines(d, fnt, height)
+    img, fnt, d = gen.initImg(width, height, bg)
+    cacheTable=gen.cacheTable(d, fnt, " 1234567890\n")
+    maxLines = gen.getMaxLines(d, fnt, height)
 
     # generating string and filename
     filename = str(lastNum) + '-'    
-    wrapped, lastNum= utils.wrap(width, maxLines, cacheTable, d, fnt, lastNum)
+    wrapped, lastNum= gen.wrap(width, maxLines, cacheTable, d, fnt, lastNum)
     filename += str(lastNum)
     lastNum+=1 #without this, image start with the same number as previous image ends with     
 
     # export image
     colors = paint.getColors(wrapped, bg)
-    utils.printText(wrapped, d, fnt, colors, cacheTable)
+    gen.printText(wrapped, d, fnt, colors, cacheTable)
     try:
         mkdir("output")#make output dir if its missing
     except FileExistsError:
         pass
-    utils.save(img, "output/"+filename+".png")
+    gen.save(img, "output/"+filename+".png")
     
     # make canvas brigther by growth%
     bg += int(growth)
