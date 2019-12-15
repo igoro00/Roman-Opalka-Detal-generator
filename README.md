@@ -25,8 +25,6 @@ It's a program that creates images stylized on [Roman Opałka](https://en.wikipe
 
 ## How To Use
 
-#### Installation
-
 - Install [Python 3](https://www.python.org/downloads/) and [Pip](https://www.makeuseof.com/tag/install-pip-for-python/) (if they're not installed already)
 - Clone this repository
 - Unpack zip
