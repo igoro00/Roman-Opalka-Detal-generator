@@ -93,8 +93,6 @@ def printText(string, drawer, font, colors, cacheTable):
                 indexinl += 1
                 bar()
 
-
-
 def save(img, filename):
     print("Saving...")
     img.save(filename)
