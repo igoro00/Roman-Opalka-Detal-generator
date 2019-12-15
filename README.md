@@ -1,4 +1,4 @@
-# Roman Opałka "Détail" generator
+# Roman Opałka "Details" generator
 
 ### Table of Contents
 
@@ -41,7 +41,7 @@ It's a program that creates images stylized on [Roman Opałka](https://en.wikipe
 
     ><h2>Make sure your terminal window is wide enough. Otherwise progress bars won't show themself correctly.
 
-[Back To The Top](#roman-opałka-"détail"-generator)
+[Back To The Top](#roman-opałka-"detail"-generator)
 
 ---
 
@@ -78,4 +78,4 @@ SOFTWARE.
 ---
 
 
-[Back To The Top](#roman-opałka-"détail"-generator)
+[Back To The Top](#roman-opałka-"detail"-generator)
