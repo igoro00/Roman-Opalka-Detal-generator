@@ -1,9 +1,9 @@
 from PIL import Image, ImageDraw, ImageFont
 from alive_progress import alive_bar
-def initImg(width, height, bg, font='FatBoyVeryRoundItalic.ttf', size = 41):
+def initImg(width, height, bg, font='fonts/FatBoyVeryRoundItalic.ttf', size = 41):
     #creating B/W image
     img = Image.new('L', (width, height), color=bg)
-    fnt = ImageFont.truetype('FatBoyVeryRoundItalic.ttf', 41)
+    fnt = ImageFont.truetype(font, 41)
     d = ImageDraw.Draw(img)
     print("Created image")
     return img, fnt, d
