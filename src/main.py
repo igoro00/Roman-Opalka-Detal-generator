@@ -12,31 +12,38 @@ import generator as gen
 import paint
 from time import time
 from os import mkdir
-
+import argparse
+from multiprocessing import Process
 
 #*configuration 
+#*▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
 #$ Default config down below is the result of calculation 
-#$ at the top of this file (line 8).
+#$ at the top of this file (line 8).    
 #$ You can change these settings but expect program to produce
 #$ images different than Roman Opałka's paintings
-height = 22608 #heigt in pixels
-width = 15652 #width in pixels
-density = 11.594 #density in px/mm
-targetNum = 7777777 #program generates images until this number appears in some image
+height = 22608 #heigt in pixels                 
+width = 15652 #width in pixels                  
+density = 11.594 #density in px/mm              
+targetNum = 3500000 #program generates images until there's this number in some photo
 lastNum = 1 #number that is printed first
 bg = 0 #starting color for first image
 growth = 1 #by how many % canvas brightens itself. 
-#^^^^^  0-255 in 100/growth iterations 
+#^^^^^  0-255 in 100/growth iterations
+#*▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+#*end of configuration
 
 
-
-#* actual program
-startTime = time()
-growth = 255.0/(100.0/growth) #translates % to increase in 0-255 range  
-imageIndex = 1
-while lastNum < targetNum:
-    print("\nPICTURE #%d"%imageIndex)
-
+def init():
+    '''
+        it generates new images on demand, ready to save
+        runs on only one core because you don't know where to start if
+        the previous one didn't end yet and set lastNum.
+    '''
+    global width
+    global height
+    global bg
+    global lastNum
+    global toSave
     #init picture
     img, fnt, d = gen.initImg(width, height, bg)
     cacheTable=gen.cacheTable(d, fnt, " 1234567890\n")
@@ -46,20 +53,49 @@ while lastNum < targetNum:
     filename = str(lastNum) + '-'    
     wrapped, lastNum= gen.wrap(width, maxLines, cacheTable, d, fnt, lastNum)
     filename += str(lastNum)
-    lastNum+=1 #without this, image start with the same number as previous image ends with     
 
-    # export image
     colors = paint.getColors(wrapped, bg)
-    gen.printText(wrapped, d, fnt, colors, cacheTable)
+    
+    bg+=int(growth)
+    lastNum += 1
+    toSave.append((img, fnt, d, wrapped, colors, filename, cacheTable))
+    print(toSave)
+
+def export(image):
+    '''
+        Exports image using provided objects.
+        It can be running on infinite number of cores as there's no logic here
+    '''
+    gen.printText(image[3], image[2], image[1], image[4], image[6])
+    gen.save(image[0], "output/"+image[5]+".png")
+
+
+if __name__ == "__main__":
+    #*runtime init stuff that can't be in the config
+    startTime = time()
     try:
         mkdir("output")#make output dir if its missing
     except FileExistsError:
         pass
-    gen.save(img, "output/"+filename+".png")
-    
-    # make canvas brigther by growth%
-    bg += int(growth)
+    growth = 255.0/(100.0/growth) #translates % to increase in 0-255 range  
+    toSave = []
 
-    imageIndex += 1
-print("\n\n\n\nDONE IN %ds"%(time()-startTime))
-  
+
+    parser = argparse.ArgumentParser(
+        description='Roman Opalka\'s "Details" generator'
+    )
+    
+    parser.add_argument('-c', '--cores', 
+                        help="Number of cores you want to assign to generator",
+                        default='1')   
+
+    args = parser.parse_args()
+    cores = args.cores
+
+    init = Process(target=init, args=())
+    #render = process(target=export, args=())
+    init.start()
+    init.join()
+    print(toSave)
+        
+print("\n\nDONE IN %ds\n\n"%(time()-startTime))

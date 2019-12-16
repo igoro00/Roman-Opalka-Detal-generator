@@ -17,6 +17,12 @@ def getColors(string, bg):
     string = string.replace("\n", "")
     paint = Paint()
     colors = []
+
+    if bg >= 255:
+        for i in string:
+            colors.append(255)
+        return colors
+
     for i in string:
         colors.append(0)
         
