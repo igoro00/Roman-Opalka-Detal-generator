@@ -10,7 +10,7 @@
 
 import generator as gen
 import paint
-from time import time
+from time import time, sleep
 from os import mkdir
 import argparse
 from multiprocessing import Process
@@ -24,42 +24,14 @@ from multiprocessing import Process
 height = 22608 #heigt in pixels                 
 width = 15652 #width in pixels                  
 density = 11.594 #density in px/mm              
-targetNum = 3500000 #program generates images until there's this number in some photo
+targetNum = 100000 #program generates images until there's this number in some photo
 lastNum = 1 #number that is printed first
 bg = 0 #starting color for first image
 growth = 1 #by how many % canvas brightens itself. 
 #^^^^^  0-255 in 100/growth iterations
+nodes = 4
 #*▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
 #*end of configuration
-
-
-def init():
-    '''
-        it generates new images on demand, ready to save
-        runs on only one core because you don't know where to start if
-        the previous one didn't end yet and set lastNum.
-    '''
-    global width
-    global height
-    global bg
-    global lastNum
-    global toSave
-    #init picture
-    img, fnt, d = gen.initImg(width, height, bg)
-    cacheTable=gen.cacheTable(d, fnt, " 1234567890\n")
-    maxLines = gen.getMaxLines(d, fnt, height)
-
-    # generating string and filename
-    filename = str(lastNum) + '-'    
-    wrapped, lastNum= gen.wrap(width, maxLines, cacheTable, d, fnt, lastNum)
-    filename += str(lastNum)
-
-    colors = paint.getColors(wrapped, bg)
-    
-    bg+=int(growth)
-    lastNum += 1
-    toSave.append((img, fnt, d, wrapped, colors, filename, cacheTable))
-    print(toSave)
 
 def export(image):
     '''
@@ -77,25 +49,54 @@ if __name__ == "__main__":
         mkdir("output")#make output dir if its missing
     except FileExistsError:
         pass
-    growth = 255.0/(100.0/growth) #translates % to increase in 0-255 range  
-    toSave = []
+    growth = 255.0/(100.0/growth) #translates % to increase in 0-255 range
+    renders = []
+    maxLines = 0
 
 
-    parser = argparse.ArgumentParser(
-        description='Roman Opalka\'s "Details" generator'
-    )
+    for i in range(nodes):
+        renders.append(Process())
+        renders[-1].start()
+        renders[-1].terminate()
     
-    parser.add_argument('-c', '--cores', 
-                        help="Number of cores you want to assign to generator",
-                        default='1')   
+    while lastNum <= targetNum:
 
-    args = parser.parse_args()
-    cores = args.cores
-
-    init = Process(target=init, args=())
-    #render = process(target=export, args=())
-    init.start()
-    init.join()
-    print(toSave)
+        #init picture
+        img, fnt, d = gen.initImg(width, height, bg)
+        cacheTable=gen.cacheTable(d, fnt, " 1234567890\n")
+        if maxLines == 0:
+            maxLines = gen.getMaxLines(d, fnt, height)
         
-print("\n\nDONE IN %ds\n\n"%(time()-startTime))
+        # generating string and filename
+        filename = str(lastNum) + '-'    
+        wrapped, lastNum= gen.wrap(width, maxLines, cacheTable, d, fnt, lastNum)
+        filename += str(lastNum)
+
+        colors = paint.getColors(wrapped, bg)
+
+        bg+=int(growth)
+        lastNum += 1
+        image = [img, fnt, d, wrapped, colors, filename, cacheTable]
+
+        #jesli jest wolne to zajmij je i spierdalaj
+        #jak nie ma wolnego to czekaj aż bedzie 
+        freeNode = False
+        j = 1
+        while not freeNode:
+            for i in range(len(renders)):
+                if not renders[i].is_alive():
+                    freeNode = True
+                    j = i
+            if not freeNode:
+                sleep(1)
+        else:
+            renders[j] = Process(target=export, args=(image,))        
+            renders[j].start()
+                    
+
+        
+    #wait for all remaining render nodes to finish their jobs
+    #and then measure time
+    for i in range(len(renders)):
+        renders[i].join()    
+    print("\n\nDONE IN %ds\n\n"%(time()-startTime))
