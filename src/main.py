@@ -92,6 +92,8 @@ if __name__ == "__main__":
         else:
             renders[j] = Process(target=export, args=(image,))        
             renders[j].start()
+            if nodes == 1:
+                renders[j].join()
                     
 
         
