@@ -12,8 +12,9 @@ class Paint:
     def get_value(self):
         return self.value
 
-def getColors(string, bg):
-    print("Generating color table")
+def getColors(string, bg, verbose = False):
+    if verbose:
+        print("Generating color table")
     string = string.replace("\n", "")
     paint = Paint()
     colors = []
@@ -34,7 +35,8 @@ def getColors(string, bg):
         else:
             colors[i] = paint.get_value()
             paint.use()
-    print("Generated color table")
+    if verbose:
+        print("Generated color table")
     return colors
 
 

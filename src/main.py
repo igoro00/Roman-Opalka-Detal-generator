@@ -10,9 +10,9 @@
 
 import generator as gen
 import paint
+from alive_progress import alive_bar
 from time import time, sleep
 from os import mkdir
-import argparse
 from multiprocessing import Process
 
 #*configuration 
@@ -24,22 +24,23 @@ from multiprocessing import Process
 height = 22608 #heigt in pixels                 
 width = 15652 #width in pixels                  
 density = 11.594 #density in px/mm              
-targetNum = 100000 #program generates images until there's this number in some photo
+targetNum = 500000 #program generates images until there's this number in some photo
 lastNum = 1 #number that is printed first
 bg = 0 #starting color for first image
 growth = 1 #by how many % canvas brightens itself. 
 #^^^^^  0-255 in 100/growth iterations
-nodes = 4
+nodes = 1 #max number of processes that the program will be able to create to render images
+verbose = 0 #if the value is 0 then its automatic based on the number of nodes
 #*▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
 #*end of configuration
 
-def export(image):
+def export(image, verbose):
     '''
         Exports image using provided objects.
         It can be running on infinite number of cores as there's no logic here
     '''
-    gen.printText(image[3], image[2], image[1], image[4], image[6])
-    gen.save(image[0], "output/"+image[5]+".png")
+    gen.printText(image[3], image[2], image[1], image[4], image[6], verbose)
+    gen.save(image[0], "output/"+image[5]+".png", verbose)
 
 
 if __name__ == "__main__":
@@ -52,7 +53,8 @@ if __name__ == "__main__":
     growth = 255.0/(100.0/growth) #translates % to increase in 0-255 range
     renders = []
     maxLines = 0
-
+    cacheTable = 0
+    verbose = (not nodes > 1) # true if its old way, with 1 node
 
     for i in range(nodes):
         renders.append(Process())
@@ -60,19 +62,18 @@ if __name__ == "__main__":
         renders[-1].terminate()
     
     while lastNum <= targetNum:
-
         #init picture
-        img, fnt, d = gen.initImg(width, height, bg)
-        cacheTable=gen.cacheTable(d, fnt, " 1234567890\n")
-        if maxLines == 0:
-            maxLines = gen.getMaxLines(d, fnt, height)
+        img, fnt, d = gen.initImg(width, height, bg, verbose)
+        if maxLines is 0 or cacheTable is 0:
+            cacheTable=gen.cacheTable(d, fnt, " 1234567890\n", verbose)
+            maxLines = gen.getMaxLines(d, fnt, height, verbose)
         
         # generating string and filename
         filename = str(lastNum) + '-'    
-        wrapped, lastNum= gen.wrap(width, maxLines, cacheTable, d, fnt, lastNum)
+        wrapped, lastNum= gen.wrap(width, maxLines, cacheTable, d, fnt, lastNum, verbose)
         filename += str(lastNum)
 
-        colors = paint.getColors(wrapped, bg)
+        colors = paint.getColors(wrapped, bg, verbose)
 
         bg+=int(growth)
         lastNum += 1
@@ -90,10 +91,12 @@ if __name__ == "__main__":
             if not freeNode:
                 sleep(1)
         else:
-            renders[j] = Process(target=export, args=(image,))        
+            renders[j] = Process(target=export, args=(image, verbose,))        
             renders[j].start()
-            if nodes == 1:
+            if verbose:
                 renders[j].join()
+            else:
+                print("[%d/%d - %s complete]"%(lastNum, targetNum, "{0:.2f}".format((float(lastNum)/float(targetNum))*100.0)+"%"))
                     
 
         
