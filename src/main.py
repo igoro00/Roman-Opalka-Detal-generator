@@ -24,7 +24,7 @@ from multiprocessing import Process
 height = 22608 #heigt in pixels                 
 width = 15652 #width in pixels                  
 density = 11.594 #density in px/mm              
-targetNum = 500000 #program generates images until there's this number in some photo
+targetNum = 7777777 #program generates images until there's this number in some photo
 lastNum = 1 #number that is printed first
 bg = 0 #starting color for first image
 growth = 1 #by how many % canvas brightens itself. 
