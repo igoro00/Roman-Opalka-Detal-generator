@@ -1,11 +1,13 @@
 from PIL import Image, ImageDraw, ImageFont
 from alive_progress import alive_bar
-def initImg(width, height, bg, font='fonts/FatBoyVeryRoundItalic.ttf', size = 41):
+
+def initImg(width, height, bg, font='fonts/FatBoyVeryRoundItalic.ttf', size = 41, verbose=False):
     #creating B/W image
     img = Image.new('L', (width, height), color=bg)
-    fnt = ImageFont.truetype(font, 41)
+    fnt = ImageFont.truetype('fonts/FatBoyVeryRoundItalic.ttf', 41)
     d = ImageDraw.Draw(img)
-    print("Created image")
+    if verbose:
+        print("Created image")
     return img, fnt, d
 
 def lastLine(string):
@@ -18,13 +20,13 @@ def textWidth(string, cacheTable):
             output += cacheTable[char]
 	return output
 
-def wrap(width, maxLines, cacheTable, drawer, font, count):
-    print("Creating text...")
-    string = ""
-    newNum = ""
-    lines = 0
-    finished = False
-    with alive_bar() as bar:
+def wrap(width, maxLines, cacheTable, drawer, font, count, verbose=False):
+    def logic(bar, count, maxLines):
+        string = ""
+        newNum = ""
+        lines = 0
+        finished = False
+
         while not finished: 
             innerFinished = False
             while not innerFinished:
@@ -33,12 +35,6 @@ def wrap(width, maxLines, cacheTable, drawer, font, count):
                         string+=newNum[:1]
                         newNum = newNum[1:]
                         bar(text = "dict", incr=1)
-                    #elif drawer.textsize(lastLine(string)+newNum[:1], font)[0] <= width:
-                    #    #if it reaches the end of the line fast way, then we need
-                    #    #to check for missing ending with trusted and slow way
-                    #    string+=newNum[:1]
-                    #    newNum = newNum[1:]
-                    #    bar(text="non-dict", incr=1)
                     else:
                         string += "\n"
                         lines += 1
@@ -49,19 +45,28 @@ def wrap(width, maxLines, cacheTable, drawer, font, count):
             if lines >= maxLines:
                 finished = True
         return string, count-1
+        
+    if verbose:
+        print("Creating text...")
+        with alive_bar() as bar:
+            return logic(bar, count, maxLines)
+    else:
+        def bar(**kwargs):
+            pass
+        return logic(bar, count, maxLines)
 
-def cacheTable(drawer, font, charsToCache):
+def cacheTable(drawer, font, charsToCache, verbose=False):
     cacheTable = dict()
     for char in charsToCache:
         cacheTable[char]=drawer.textsize(char, font)[0]
-    print("Created cache table")
+    if verbose:
+        print("Created cache table")
     return cacheTable
 
-def getMaxLines(drawer, font, height):
-    i = 0
-    pxs = 0
-    print("Calculating lines quantity...")
-    with alive_bar(height) as bar:
+def getMaxLines(drawer, font, height, verbose=False):
+    def logic(bar):
+        i = 0
+        pxs = 0
         while True:
             my_height = drawer.textsize("0\n"*i, font)[1]
             if my_height<=height:
@@ -71,15 +76,25 @@ def getMaxLines(drawer, font, height):
             else:
                 bar(incr=height-pxs)
                 break
-    print("Calculated max number of lines. Its", i, "lines.")
+        return i
+        
+    if verbose:
+        print("Calculating lines quantity...")
+        with alive_bar(height) as bar:
+            i = logic(bar)
+        print("Calculated max number of lines. Its", i, "lines.")
+        
+    else:
+        def bar(**kwargs):
+            pass
+        i = logic(bar)
     return i
 
-def printText(string, drawer, font, colors, cacheTable):
-    print("Printing text on image...")
-    lines = string.split("\n")
-    index = 0
-    indexinl = 0
-    with alive_bar(len(string.replace("\n", ""))) as bar:
+def printText(string, drawer, font, colors, cacheTable, verbose = False):
+    def logic(bar):
+        lines = string.split("\n")
+        index = 0
+        indexinl = 0
         for l, line in enumerate(lines):
             if l == 1:
                 h = drawer.textsize("0000"*(l), font)[1]
@@ -93,7 +108,18 @@ def printText(string, drawer, font, colors, cacheTable):
                 indexinl += 1
                 bar()
 
-def save(img, filename):
-    print("Saving...")
+    if verbose:
+        print("Printing text on image...")
+        with alive_bar(len(string.replace("\n", ""))) as bar:
+            logic(bar)
+    else:
+        def bar(**kwargs):
+            pass
+        logic(bar)
+
+def save(img, filename, verbose = False):
+    if verbose:
+        print("Saving...")
     img.save(filename)
-    print("Saved as", filename)
+    if verbose:
+        print("Saved as", filename)
